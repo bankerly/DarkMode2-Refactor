@@ -1,9 +1,20 @@
-﻿using DarkMode.Core.Constants;
+using DarkMode.Core.Constants;
+using DarkMode.Core.Domains;
 using DarkMode.Core.Interfaces.Config;
+using DarkMode.Core.Interfaces.Execution;
+using DarkMode.Core.Interfaces.Location;
+using DarkMode.Core.Interfaces.Task;
+using DarkMode.Core.Interfaces.Theme;
 using DarkMode.Core.Interfaces.Hardware;
 using DarkMode.Core.Models;
 using DarkMode.Core.Services.Config;
+using DarkMode.Core.Services.Execution;
+using DarkMode.Core.Services.Execution.Factory;
 using DarkMode.Core.Services.Hardware;
+using DarkMode.Core.Services.Location;
+using DarkMode.Core.Services.Scheduler;
+using DarkMode.Core.Services.Task;
+using DarkMode.Core.Services.Theme;
 using DarkMode.Core.Services.Logging;
 using DarkMode.Ui.Services;
 using DarkMode.Ui.Services.Contracts;
@@ -57,7 +68,9 @@ public partial class App
             // Window
             _ = services.AddSingleton<MainWindow>();
             _ = services.AddSingleton<MainWindowViewModel>();
-            _ = services.AddSingleton<SettingsWindow>();
+            // Transient on purpose: WPF throws when Show() is called on a closed window,
+            // and the window is re-opened from the tray menu every time.
+            _ = services.AddTransient<SettingsWindow>();
             _ = services.AddSingleton<SettingsWindowViewModel>();
             
             // Pages
@@ -89,14 +102,33 @@ public partial class App
                 }
                 else
                 {
-                    b.SetCulture(new CultureInfo((JsonConvert.DeserializeObject<AppSettings>(File.ReadAllText(PathConstants.AppSettingsPath)).Language)));
+                    var stored = JsonConvert.DeserializeObject<AppSettings>(File.ReadAllText(PathConstants.AppSettingsPath));
+                    b.SetCulture(new CultureInfo(stored?.Language ?? "zh-CN"));
                 }
                 
             });
             
             // Other
             _ = services.AddSingleton<IHardwareService, HardwareService>();
-            _ = services.AddSingleton<IConfigService, ConfigService>();
+            _ = services.AddSingleton<ConfigService>();
+            _ = services.AddSingleton<IConfigService>(provider => provider.GetRequiredService<ConfigService>());
+            _ = services.AddSingleton<ILocationService, LocationService>();
+            // fully qualified: Wpf.Ui exposes same-named types
+            _ = services.AddSingleton<DarkMode.Core.Interfaces.Theme.IThemeService, DarkMode.Core.Services.Theme.ThemeService>();
+
+            // Execution modes + scheduler: without these the schedule never ran at all.
+            _ = services.AddSingleton<TimeScheduleModeService>();
+            _ = services.AddSingleton<SensorModeService>();
+            _ = services.AddSingleton<IExecutionModeFactory, ExecutionModeFactory>();
+            _ = services.AddSingleton<IConfigMonitorService<UserSettings>, ConfigMonitorService<UserSettings>>();
+            _ = services.AddSingleton<SchedulerService>();
+            _ = services.AddSingleton<ChangeThemeTask>();
+            _ = services.AddSingleton(provider => new ScheduledJob
+            {
+                Name = "Theme switching",
+                Tasks = new List<ITask> { provider.GetRequiredService<ChangeThemeTask>() }
+            });
+            _ = services.AddHostedService<SchedulerHostedService>();
         }).Build();
     private void App_OnStartup(object sender, StartupEventArgs e)
     {

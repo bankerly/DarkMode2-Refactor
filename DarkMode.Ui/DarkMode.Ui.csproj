@@ -69,4 +69,11 @@
       <ProjectReference Include="..\DarkMode.Core\DarkMode.Core.csproj" />
     </ItemGroup>
 
+    <!-- LoggerService reads appSettings.json before the host exists; it must ship with the app. -->
+    <ItemGroup>
+      <None Update="appSettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
+    </ItemGroup>
+
 </Project>

@@ -5,6 +5,9 @@ namespace DarkMode.Core.Models;
 public class UserSettings
 {
     public ExecutionType ExecutionMode { get; set; } = ExecutionType.TimeSchedule;
+
+    /// <summary>Use sunrise/sunset of the configured coordinates instead of fixed light/dark times.</summary>
+    public bool UseSunriseSunset { get; set; } = false;
     public LightConfig LightConfig { get; set; }
     public DarkConfig DarkConfig { get; set; }
     public string WallpaperEnginePath { get; set; } = null;

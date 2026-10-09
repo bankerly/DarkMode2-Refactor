@@ -6,6 +6,7 @@ using DarkMode.Core.Interfaces.Execution;
 using DarkMode.Core.Interfaces.Scheduler;
 using DarkMode.Core.Models;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Timer = System.Timers.Timer;
 
 namespace DarkMode.Core.Services.Scheduler;
@@ -19,14 +20,18 @@ public class SchedulerService: ISchedulerService
     private readonly IConfigMonitorService<UserSettings> _userSettingsMonitor;
     private readonly Timer _timer;
 
-    public SchedulerService(IExecutionModeFactory modeFactory, IEnumerable<ScheduledJob> jobs, IConfigMonitorService<UserSettings> userSettingsMonitor)
+    public SchedulerService(
+        IExecutionModeFactory modeFactory,
+        IEnumerable<ScheduledJob> jobs,
+        IConfigMonitorService<UserSettings> userSettingsMonitor,
+        ILogger<SchedulerService>? logger = null)
     {
         _modeFactory = modeFactory;
         _currentMode = _modeFactory.GetExecutionMode();
         _jobs = jobs;
         _userSettingsMonitor = userSettingsMonitor;
         _userSettingsMonitor.OnSettingsChanged += OnUserSettingsChanged;
-        _logger = new LoggerFactory().CreateLogger<SchedulerService>();
+        _logger = logger ?? NullLogger<SchedulerService>.Instance;
         _timer = new Timer(1000);
         _timer.Elapsed += OnTimerElapsed;
     }
@@ -54,8 +59,8 @@ public class SchedulerService: ISchedulerService
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError("Task execution failed. message: {message}", ex.Message);
-                        throw;
+                        // rethrowing here killed the process: the scheduler runs on a timer thread
+                        _logger.LogError(ex, "Task execution failed: {message}", ex.Message);
                     }
                 }
             }

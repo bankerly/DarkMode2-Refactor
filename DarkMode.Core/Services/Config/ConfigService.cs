@@ -4,12 +4,21 @@ using DarkMode.Core.Models;
 using DarkMode.Core.Services.Config.ConfigFixer;
 using DarkMode.Core.Utils;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Newtonsoft.Json;
 
 namespace DarkMode.Core.Services.Config;
 
-public class ConfigService(ILogger<ConfigService> _logger) : IConfigService
+public class ConfigService : IConfigService
 {
+    private readonly ILogger<ConfigService> _logger;
+
+    // Logger is optional so callers that build a ConfigService before the host
+    // exists (e.g. LoggerService.GetLogLevel) cannot crash on a null logger.
+    public ConfigService(ILogger<ConfigService>? logger = null)
+    {
+        _logger = logger ?? NullLogger<ConfigService>.Instance;
+    }
     private readonly Dictionary<Type, object> _fixers = new()
     {
         { typeof(UserSettings), new UserSettingsFixer() },
@@ -52,6 +61,11 @@ public class ConfigService(ILogger<ConfigService> _logger) : IConfigService
         {
             try
             {
+                // UserSettings lives in %APPDATA%\DarkMode, which does not exist on a
+                // first run; create it before writing or the save silently fails.
+                var directory = Path.GetDirectoryName(configPath);
+                if (!string.IsNullOrEmpty(directory)) Directory.CreateDirectory(directory);
+
                 File.WriteAllText(configPath, JsonConvert.SerializeObject(config, Formatting.Indented));
                 _logger.LogDebug("Saved config: {config}", Path.GetFileName(configPath));
             }

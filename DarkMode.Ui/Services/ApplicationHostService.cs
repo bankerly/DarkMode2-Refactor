@@ -33,6 +33,13 @@ public class ApplicationHostService : IHostedService
         var mainWindow = _serviceProvider.GetRequiredService<MainWindow>();
         mainWindow.Show();
 
+        // MainWindow is only a tray-icon host (hidden, opacity 0, no taskbar entry), so
+        // launching the app showed nothing at all and looked like it never started.
+        // Surface the settings window on start; it is opened without an owner so it is
+        // not tied to the hidden main window.
+        var settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
+        settingsWindow.Show();
+
         return Task.CompletedTask;
     }
 
