@@ -122,6 +122,9 @@ public partial class App
 
     private void App_OnStartup(object sender, StartupEventArgs e)
     {
+        LaunchedFromAutostart = e.Args.Any(arg =>
+            string.Equals(arg, StartupService.AutostartArgument, StringComparison.OrdinalIgnoreCase));
+
         // Single instance. The mutex must stay referenced: a collected mutex releases the
         // name and lets a second copy of the app start (two trays, two theme writers).
         bool createdNew;
@@ -144,6 +147,8 @@ public partial class App
         var config = _host.Services.GetRequiredService<IConfigService>();
         config.EnsureValidConfig(PathConstants.AppSettingsPath, new AppSettings());
         config.EnsureValidConfig(PathConstants.UserSettingsPath, new UserSettings());
+
+        ReconcileAutoStart(config, logger);
 
         SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
     }
@@ -171,6 +176,9 @@ public partial class App
 
     private static Mutex? _singleInstanceMutex;
     private static bool _exceptionDialogShown;
+
+    /// <summary>True when this process was started by the logon autostart entry.</summary>
+    public static bool LaunchedFromAutostart { get; private set; }
 
     private void App_OnDispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
     {
@@ -203,6 +211,36 @@ public partial class App
         if (e.Category is UserPreferenceCategory.Desktop or UserPreferenceCategory.General or UserPreferenceCategory.Color)
         {
             Dispatcher.Invoke(ApplyMonetTheme);
+        }
+    }
+
+    /// <summary>
+    /// The registry decides whether Windows really starts the app, so on every start the
+    /// stored flag is reconciled with it, and an outdated entry is upgraded to the format
+    /// carrying <c>--autostart</c>.
+    /// </summary>
+    private static void ReconcileAutoStart(IConfigService config, Microsoft.Extensions.Logging.ILogger logger)
+    {
+        try
+        {
+            var startup = _host.Services.GetRequiredService<IStartupService>();
+            var registered = startup.IsEnabled();
+            var configured = config.LoadConfig<AppSettings>(PathConstants.AppSettingsPath).AutoStart;
+
+            if (registered != configured)
+            {
+                config.UpdateConfig<AppSettings>(PathConstants.AppSettingsPath, settings => settings.AutoStart = registered);
+                logger.LogInformation("开机自启动状态以注册表为准：注册表 {Registered}，配置原为 {Configured}", registered, configured);
+            }
+
+            if (registered && startup.Normalize())
+            {
+                logger.LogInformation("开机自启动项已补齐 {Argument} 参数", StartupService.AutostartArgument);
+            }
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "校验开机自启动状态失败");
         }
     }
 

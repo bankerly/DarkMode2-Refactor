@@ -7,10 +7,14 @@ using Microsoft.Win32;
 namespace DarkMode.Core.Services.Startup;
 
 /// <summary>
-/// Autostart lives in HKCU\...\CurrentVersion\Run, so enabling it needs no elevation.
+/// Autostart lives in HKCU\\...\\CurrentVersion\\Run, so enabling it needs no elevation.
+/// The registered command carries <see cref="AutostartArgument"/> so the app can tell a
+/// logon launch (tray only) from a manual one (show the window).
 /// </summary>
 public class StartupService : IStartupService
 {
+    public const string AutostartArgument = "--autostart";
+
     private const string RunKeyPath = @"Software\Microsoft\Windows\CurrentVersion\Run";
     private const string ValueName = "DarkMode2";
 
@@ -20,6 +24,8 @@ public class StartupService : IStartupService
     {
         _logger = logger ?? NullLogger<StartupService>.Instance;
     }
+
+    public string BuildCommand() => $"\"{ResolveExecutablePath()}\" {AutostartArgument}";
 
     public bool IsEnabled()
     {
@@ -35,9 +41,9 @@ public class StartupService : IStartupService
 
             if (enabled)
             {
-                var exe = ResolveExecutablePath();
-                key.SetValue(ValueName, $"\"{exe}\"", RegistryValueKind.String);
-                _logger.LogInformation("开机自启动已启用：{Exe}", exe);
+                var command = BuildCommand();
+                key.SetValue(ValueName, command, RegistryValueKind.String);
+                _logger.LogInformation("开机自启动已启用：{Command}", command);
             }
             else
             {
@@ -49,6 +55,27 @@ public class StartupService : IStartupService
         {
             _logger.LogError(ex, "修改开机自启动失败");
             throw;
+        }
+    }
+
+    public bool Normalize()
+    {
+        try
+        {
+            using var key = Registry.CurrentUser.OpenSubKey(RunKeyPath, true);
+            if (key?.GetValue(ValueName) is not string current || current.Length == 0) return false;
+
+            var expected = BuildCommand();
+            if (string.Equals(current.Trim(), expected, StringComparison.OrdinalIgnoreCase)) return false;
+
+            key.SetValue(ValueName, expected, RegistryValueKind.String);
+            _logger.LogInformation("开机自启动项已升级为新格式：{Command}", expected);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "升级开机自启动项失败");
+            return false;
         }
     }
 

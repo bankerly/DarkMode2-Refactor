@@ -37,6 +37,12 @@ public class ApplicationHostService : IHostedService
         // launching the app showed nothing at all and looked like it never started.
         // Surface the settings window on start; it is opened without an owner so it is
         // not tied to the hidden main window.
+        // 开机自启时只驻留托盘：否则每次登录都会弹一次设置窗口
+        if (App.LaunchedFromAutostart)
+        {
+            return Task.CompletedTask;
+        }
+
         var settingsWindow = _serviceProvider.GetRequiredService<SettingsWindow>();
         settingsWindow.Show();
 
