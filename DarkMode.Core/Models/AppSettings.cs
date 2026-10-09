@@ -20,7 +20,5 @@ public class AppSettings
 
     public string Language { get; set; } = "zh-CN";
     
-    public bool DeveloperMode { get; set; } = false;
-
     public LogEventLevel LogLevel { get; set; } = LogEventLevel.Information;
 }

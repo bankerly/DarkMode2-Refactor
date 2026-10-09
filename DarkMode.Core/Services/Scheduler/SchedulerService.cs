@@ -77,8 +77,10 @@ public class SchedulerService: ISchedulerService
     
     private void OnUserSettingsChanged(UserSettings updated)
     {
-        _logger.LogInformation("Scheduler changed, mode: {mode}", updated.ExecutionMode);
-        
+        // the watcher fires several times per save; only report real mode changes
+        if (_currentMode?.Name != _modeFactory.GetExecutionMode().Name)
+            _logger.LogInformation("Scheduler changed, mode: {mode}", updated.ExecutionMode);
+
         _timer.Stop();
         
         _currentMode = _modeFactory.GetExecutionMode();

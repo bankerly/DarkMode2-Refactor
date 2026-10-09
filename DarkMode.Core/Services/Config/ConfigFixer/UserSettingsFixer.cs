@@ -20,7 +20,6 @@ public class UserSettingsFixer : SettingsFixer<UserSettings>
         else
             MergeDarkConfig(current.DarkConfig, defaults.DarkConfig);
 
-        current.WallpaperEnginePath ??= defaults.WallpaperEnginePath;
         current.Latitude ??= defaults.Latitude;
         current.Longitude ??= defaults.Longitude;
 
@@ -40,16 +39,12 @@ public class UserSettingsFixer : SettingsFixer<UserSettings>
     private static void MergeLightConfig(LightConfig current, LightConfig defaults)
     {
         current.Time ??= defaults.Time;
-        current.WallpaperPath ??= defaults.WallpaperPath;
-        current.LiveWallpaperPath ??= defaults.LiveWallpaperPath;
         current.SystemCursor = current.SystemCursor;
     }
 
     private static void MergeDarkConfig(DarkConfig current, DarkConfig defaults)
     {
         current.Time ??= defaults.Time;
-        current.WallpaperPath ??= defaults.WallpaperPath;
-        current.LiveWallpaperPath ??= defaults.LiveWallpaperPath;
         current.SystemCursor = current.SystemCursor;
     }
 }

@@ -1,19 +1,22 @@
+using System.Windows;
 using DarkMode.Ui.ViewModels.Windows;
-using Wpf.Ui.Appearance;
 
 namespace DarkMode.Ui.Views.Windows;
 
 public partial class MainWindow
 {
-    // public MainWindowViewModel ViewModel { get; }
-    
+    private readonly MainWindowViewModel _viewModel;
+
     public MainWindow(MainWindowViewModel viewModel)
     {
-        SystemThemeWatcher.Watch(this);
-        
-        // ViewModel = viewModel;
+        _viewModel = viewModel;
         DataContext = viewModel;
-        
         InitializeComponent();
     }
+
+    private void OnTrayLeftClick(object sender, RoutedEventArgs e) => _viewModel.OpenSettingsWindow();
+
+    private void OnOpenSettings(object sender, RoutedEventArgs e) => _viewModel.OpenSettingsWindow();
+
+    private void OnExit(object sender, RoutedEventArgs e) => _viewModel.ExitProgram();
 }

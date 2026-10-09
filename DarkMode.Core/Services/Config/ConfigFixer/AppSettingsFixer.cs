@@ -14,7 +14,6 @@ public class AppSettingsFixer : SettingsFixer<AppSettings>
         current.Notifications = current.Notifications || defaults.Notifications;
         current.TrayIcon = current.TrayIcon || defaults.TrayIcon;
         current.AutoUpdate = current.AutoUpdate || defaults.AutoUpdate;
-        current.DeveloperMode = current.DeveloperMode || defaults.DeveloperMode;
 
         current.UpdateChannel ??= defaults.UpdateChannel;
         current.Theme ??= defaults.Theme;

@@ -5,11 +5,12 @@ namespace DarkMode.Ui.Views.Pages;
 
 public partial class SettingsPage : Page
 {
-    public SettingsPageViewModel ViewModel { get; }
     public SettingsPage(SettingsPageViewModel viewModel)
     {
         ViewModel = viewModel;
-        DataContext = ViewModel;
+        DataContext = viewModel;
         InitializeComponent();
     }
+
+    public SettingsPageViewModel ViewModel { get; }
 }
