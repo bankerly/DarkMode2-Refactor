@@ -10,7 +10,7 @@
       d:DesignHeight="600" d:DesignWidth="820"
       Background="{DynamicResource MaterialDesignPaper}"
       Foreground="{DynamicResource MaterialDesignBody}"
-      FontFamily="{materialDesign:MaterialDesignFont}"
+      FontFamily="{StaticResource AppFontFamily}"
       TextOptions.TextFormattingMode="Ideal">
     <Page.Resources>
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />

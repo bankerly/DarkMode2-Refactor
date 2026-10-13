@@ -20,6 +20,9 @@ public class MonetThemeService
 
     public bool IsDark { get; private set; }
 
+    /// <summary>Raised after a theme was applied, so open windows can re-tint themselves.</summary>
+    public event Action<Color, bool>? ThemeApplied;
+
     public MonetThemeService(IMonetColorService monetColorService, ILogger<MonetThemeService> logger)
     {
         _monetColorService = monetColorService;
@@ -42,6 +45,8 @@ public class MonetThemeService
 
         _logger.LogInformation("莫奈主题已应用：{Scheme} 主色 {Primary} 次色 {Secondary}（种子 #{Seed:X8}）",
             dark ? "深色" : "浅色", primary, secondary, palette.Seed);
+
+        ThemeApplied?.Invoke(SurfaceColor, dark);
     }
 
     private static Color FromArgb(uint argb) => Color.FromArgb(

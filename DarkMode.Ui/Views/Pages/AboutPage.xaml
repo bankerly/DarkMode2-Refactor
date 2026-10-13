@@ -8,7 +8,7 @@
       d:DesignHeight="600" d:DesignWidth="820"
       Background="{DynamicResource MaterialDesignPaper}"
       Foreground="{DynamicResource MaterialDesignBody}"
-      FontFamily="{materialDesign:MaterialDesignFont}">
+      FontFamily="{StaticResource AppFontFamily}">
     <ScrollViewer VerticalScrollBarVisibility="Auto">
         <StackPanel Margin="28,26,28,28">
             <StackPanel Orientation="Horizontal">

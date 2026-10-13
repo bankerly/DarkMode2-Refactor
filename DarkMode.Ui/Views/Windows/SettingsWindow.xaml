@@ -15,7 +15,7 @@
         TextElement.FontWeight="Regular"
         TextElement.FontSize="13"
         TextOptions.TextFormattingMode="Ideal"
-        FontFamily="{materialDesign:MaterialDesignFont}">
+        FontFamily="{StaticResource AppFontFamily}">
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="230" />

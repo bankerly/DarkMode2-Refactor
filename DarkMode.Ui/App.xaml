@@ -7,6 +7,8 @@
              Startup="App_OnStartup">
     <Application.Resources>
         <ResourceDictionary>
+            <!-- 中西文统一到同一字体栈：MaterialDesignFont 指向 Roboto，本机没装时会中英混排 -->
+            <FontFamily x:Key="AppFontFamily">Microsoft YaHei UI, Microsoft YaHei, Segoe UI, Arial</FontFamily>
             <ResourceDictionary.MergedDictionaries>
                 <!-- 具体颜色在启动时由莫奈取色（壁纸主色）覆盖 -->
                 <materialDesign:BundledTheme BaseTheme="Light" PrimaryColor="DeepPurple" SecondaryColor="Lime" />
