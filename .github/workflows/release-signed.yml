@@ -79,4 +79,8 @@ jobs:
         with:
           files: DarkMode2-*-win-x64-signed.zip
           name: ${{ env.VERSION }}
-          generate_release_notes: true
+          # 下载页必须注明使用 SignPath Foundation 签名（Foundation 表单的硬性要求）
+          body: |
+            > 本项目使用 [SignPath Foundation](https://signpath.org/) 为 Windows 可执行文件进行代码签名。
+
+            下载后可用 `signtool verify /pa /v DarkMode.Ui.exe` 校验签名。
