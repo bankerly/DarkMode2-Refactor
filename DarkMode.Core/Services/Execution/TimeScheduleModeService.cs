@@ -3,8 +3,10 @@ using DarkMode.Core.Constants;
 using DarkMode.Core.Enums;
 using DarkMode.Core.Interfaces.Config;
 using DarkMode.Core.Interfaces.Execution;
+using DarkMode.Core.Interfaces.Theme;
 using DarkMode.Core.Models;
 using DarkMode.Core.Services.Config;
+using DarkMode.Core.Services.Theme;
 using DarkMode.Core.Utils;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -22,21 +24,49 @@ public class TimeScheduleModeService : IExecutionMode
     private static readonly TimeSpan CacheLifetime = TimeSpan.FromSeconds(20);
 
     private readonly IConfigService _configService;
+    private readonly IThemeService _themeService;
     private readonly ILogger<TimeScheduleModeService> _logger;
 
     private DateTime _cacheStamp = DateTime.MinValue;
     private bool _cacheValue;
     private DateTime _lastLoggedDate = DateTime.MinValue;
+    private DateTime _lastDecisionLog = DateTime.MinValue;
 
-    public TimeScheduleModeService(IConfigService? configService = null, ILogger<TimeScheduleModeService>? logger = null)
+    public TimeScheduleModeService(
+        IConfigService? configService = null,
+        IThemeService? themeService = null,
+        ILogger<TimeScheduleModeService>? logger = null)
     {
         _configService = configService ?? new ConfigService();
+        _themeService = themeService ?? new ThemeService();
         _logger = logger ?? NullLogger<TimeScheduleModeService>.Instance;
     }
 
     public ExecutionType Name => ExecutionType.TimeSchedule;
 
-    public bool ShouldExecute() => IsDarkPeriod();
+    /// <summary>
+    /// The scheduler runs its tasks whenever this returns true, so it must mean
+    /// "the current theme no longer matches the period". Returning the period itself
+    /// made the app one-directional: during the light period nothing ever ran.
+    /// </summary>
+    public bool ShouldExecute()
+    {
+        var dark = IsDarkPeriod();
+        var wanted = dark ? SystemTheme.Dark : SystemTheme.Light;
+        var current = _themeService.GetCurrentTheme();
+        var needed = current != wanted;
+
+        // heartbeat: makes "why did nothing happen" answerable from the log alone
+        var now = DateTime.Now;
+        if (now - _lastDecisionLog > TimeSpan.FromSeconds(30))
+        {
+            _lastDecisionLog = now;
+            _logger.LogInformation("时段判定：{Period}，系统主题 {Current}，需要切换 {Needed}",
+                dark ? "深色时段" : "浅色时段", current, needed);
+        }
+
+        return needed;
+    }
 
     /// <summary>True while the dark period is active.</summary>
     public bool IsDarkPeriod()

@@ -23,8 +23,22 @@ public static class SunCalculator
         var sunsetUtc = ComputeUtcTime(date, latitude, longitude, sunrise: false);
         if (sunriseUtc is null || sunsetUtc is null) return null;
 
+        // The computed times are in UTC and can belong to the previous UTC day: for an
+        // eastern longitude (Beijing, UTC+8) sunrise is 22:20 UTC on the day *before* the
+        // local date. Adding the offset can therefore push the value to the next local
+        // day, which made "now < sunrise" true for the whole day.
         var offset = TimeZoneInfo.Local.GetUtcOffset(date);
-        return (date.Date + sunriseUtc.Value + offset, date.Date + sunsetUtc.Value + offset);
+        var sunrise = SnapToLocalDate(date.Date + sunriseUtc.Value + offset, date.Date);
+        var sunset = SnapToLocalDate(date.Date + sunsetUtc.Value + offset, date.Date);
+
+        return (sunrise, sunset);
+    }
+
+    private static DateTime SnapToLocalDate(DateTime value, DateTime localDate)
+    {
+        if (value < localDate) return value.AddDays(1);
+        if (value >= localDate.AddDays(1)) return value.AddDays(-1);
+        return value;
     }
 
     private static TimeSpan? ComputeUtcTime(DateTime date, double latitude, double longitude, bool sunrise)
